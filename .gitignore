@@ -1,0 +1,16 @@
+# Virtual Environment
+.venv/
+
+# Python
+__pycache__/
+*.pyc
+
+# VS Code
+.vscode/
+
+# Logs
+*.log
+
+# SQLite temporary files
+*.db-journal
+*.sqlite-journal
