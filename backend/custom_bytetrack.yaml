@@ -1,0 +1,32 @@
+# Custom ByteTrack config — reduces track fragmentation (one physical person
+# getting split into multiple track IDs) compared to Ultralytics' default
+# bytetrack.yaml.
+#
+# IMPORTANT: this was reconstructed from the commonly-documented default
+# ByteTrack field names/values, NOT copied directly from your installed
+# Ultralytics version. Before trusting these values, compare against your
+# own installed default at:
+#   .venv\Lib\site-packages\ultralytics\cfg\trackers\bytetrack.yaml
+# if any field name differs (Ultralytics has changed tracker configs between
+# versions), update this file to match your version's actual field names.
+
+tracker_type: bytetrack
+
+track_high_thresh: 0.5    # detections above this confidence start a track / continue matching
+track_low_thresh: 0.1     # detections above this (but below high_thresh) are still used for a second-pass association — this is the core mechanism that lets ByteTrack recover a track through a brief bad-confidence frame instead of dropping it 
+new_track_thresh: 0.6     # confidence required to START a brand new track (kept relatively high — we don't want low-confidence noise spawning fake new tracks)
+
+# Increased from the common default (30) — a track can now go up to ~3
+# seconds (at 30fps) without a matching detection before ByteTrack itself
+# gives up and lets it die (our own ReID layer in main.py has a separate,
+# longer window on top of this via REID_POOL_MAX_AGE_SECONDS in config.py).
+track_buffer: 90
+
+# Loosened slightly from the common default (0.8) — favors re-associating a
+# detection with an existing track over spawning a new one, per the
+# teammate suggestion to reduce fragmentation. If you start seeing two
+# DIFFERENT people's tracks incorrectly merging into one, this is the value
+# to raise back up.
+match_thresh: 0.75
+
+fuse_score: true

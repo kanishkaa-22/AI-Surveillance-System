@@ -1,0 +1,13 @@
+model,format,device,fps
+yolo11n.pt,pt,CPU,51.62
+yolo11n.pt,pt,GPU,143.99
+yolo11n.pt,onnx,CPU,43.25
+yolo11n.pt,onnx,GPU,136.09
+yolo11s.pt,pt,CPU,32.19
+yolo11s.pt,pt,GPU,143.59
+yolo11s.pt,onnx,CPU,11.89
+yolo11s.pt,onnx,GPU,117.92
+yolo11m.pt,pt,CPU,14.37
+yolo11m.pt,pt,GPU,111.2
+yolo11m.pt,onnx,CPU,6.23
+yolo11m.pt,onnx,GPU,87.14

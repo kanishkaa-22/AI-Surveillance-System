@@ -1,0 +1,23 @@
+# onnxruntime-gpu is pinned below 1.27 deliberately — versions 1.27+ default
+# to expecting CUDA 13.x, which broke GPU detection on this project's setup
+# (CUDA 12.x / RTX 5070). 1.26.0 is the newest version confirmed working.
+#
+# IMPORTANT — INSTALL IN TWO STEPS, NOT ONE:
+#   pip install -r recognition\requirements.txt
+#   pip uninstall onnxruntime -y
+#   pip install onnxruntime-gpu==1.26.0
+# insightface itself depends on plain "onnxruntime" internally, so a single
+# `pip install -r ...` can silently let plain onnxruntime overwrite
+# onnxruntime-gpu's files (both packages install into the same folder name).
+# The uninstall+reinstall above forces onnxruntime-gpu to be the final,
+# winning copy. Always re-run those two extra lines after touching this file.
+# insightface is unpinned upstream but has a known deprecation warning
+# internally (SimilarityTransform.estimate -> from_estimate, removed in
+# insightface 2.2) — pin below that to avoid a silent break on next upgrade
+# until this is deliberately addressed.
+insightface<2.2
+opencv-python
+numpy
+torch
+torchvision
+ 

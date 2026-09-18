@@ -1,9 +1,3 @@
-# Virtual Environment
-.venv/
-
-# Python
-__pycache__/
-*.pyc
 
 # VS Code
 .vscode/
@@ -15,5 +9,30 @@ __pycache__/
 *.db-journal
 *.sqlite-journal
 
-*.onnx
+
+*.engine
+data/
+recognition/embeddings/*.npy
+backend/database/surveillance.db
+
+# ==== Environment ====
+.venv/
+__pycache__/
+*.pyc
+
+# ==== Model weights (large, auto-downloaded by Ultralytics) ====
 *.pt
+*.onnx
+backend/trt_cache/
+
+# ==== PRIVACY: face data, biometric data, video containing real people ====
+data/
+recognition/enrolled_faces/
+recognition/embeddings/
+runs/
+checkings.py
+
+# ==== Runtime-generated, not source ====
+backend/database/surveillance.db
+dashboard/latest_frame.jpg
+
