@@ -5,26 +5,29 @@ or lowering it does, so you can reason about trade-offs together.
 """
 
 # ---- Detection / Tracking ----
-MODEL_PATH = "yolo11s.pt"     # UPGRADED from yolo11n — benchmark showed yolo11s still runs ~135-148 FPS on GPU (RTX 5070), comfortably real-time, with meaningfully better accuracy on close/overlapping people (Issue B). First run will auto-download yolo11s.pt.
+MODEL_PATH = "yolo11s.pt"     # UPGRADED from yolo11n — your benchmark showed yolo11s still runs ~135-145 FPS on GPU (RTX 5070), comfortably real-time, with meaningfully better accuracy on close/overlapping people (Issue B). First run will auto-download yolo11s.pt.
 DEVICE = 0                     # GPU 0. Use "cpu" to force CPU.
-TRACK_LOST_AFTER_FRAMES = 5    # ByteTrack can switch to a brand-new raw track ID within just 1-2 frames on a fast, abrupt occlusion/motion event. At 30 (the old default), those fast switches were never registered in the lost pool in time for ReID to catch them at all. Test at 5 first; only raise toward 15-20 if 5 causes its own problems (e.g. treating a brief real occlusion as a full loss too eagerly).
+TRACK_LOST_AFTER_FRAMES = 5    # NOT changed to the suggested 15-20 yet — see Fix #1 procedure. ByteTrack can switch to a brand-new raw track ID within just 1-2 frames on a fast, abrupt occlusion/motion event. At 30 (the old default), those fast switches were never registered in the lost pool in time for ReID to catch them at all. Test at 5 first; only raise toward 15-20 if 5 causes its own problems (e.g. treating a brief real occlusion as a full loss too eagerly).
 
 # ---- Face Recognition ----
 MATCH_THRESHOLD = 0.28         # cosine similarity floor to accept a face match. Higher = fewer false positives (strangers misidentified as known people), but more false negatives (known people missed).
-                                # Empirically calibrated via calibrate_threshold.py across 4 enrolled people — the original 0.45 was well above 3 of 4 people's genuine-match median, causing frequent
+                                # Empirically calibrated via calibrate_threshold.py across 4 enrolled
+                                # people (kanishkaa, satya, evana, abhinaya) — the original 0.45 was
+                                # well above 3 of 4 people's genuine-match median, causing frequent
                                 # under-recognition. 0.28 sits just above the highest measured
-                                # impostor 95th-percentile score (person_1, 0.286) while being far more
+                                # impostor 95th-percentile score (evana, 0.286) while being far more
                                 # permissive for genuine matches. NOT changed to the suggested
-                                # 0.30-0.32 yet — person_1's margin is already thin at 0.28, and a
+                                # 0.30-0.32 yet — evana's margin is already thin at 0.28, and a
                                 # crowd-clip misidentification is more likely a rare outlier slipping
-                                # past this margin than proof 0.28 itself is wrong. 
-                                # re-run calibrate_threshold.py
+                                # past this margin than proof 0.28 itself is wrong. See Fix #3
+                                # procedure before changing this — re-run calibrate_threshold.py
                                 # including the specific misidentified crowd frame first.
 CONFIDENCE_FLOOR = 0.25        # below this score, treat it as "no reliable signal" rather than a meaningful non-match — a 0.02 score and a 0.43 score are both "Unknown" today, but they mean very different things. Scores are still stored as-is in the DB either way, so this doesn't hide data, it just tells you which numbers are noise.
 RECOGNITION_LOOKBACK_FRAMES = 28  # raised from 8, per team suggestion — more chances to catch a good frame, at the cost of ~3x more face-detection work per trigger event, and more memory held per active track in crowd scenes.
 REMEMBER_IDENTITY_PER_TRACK = True  # once a track_id is confidently recognized, reuse that identity for later events on the SAME track_id if a later trigger finds no usable face (e.g. exiting with back turned). Trade-off: if a track_id ever gets silently reassigned to a different real person, this could carry the wrong name forward — the ReID system reduces how often that happens, but doesn't eliminate it.
 DET_SIZE = (640, 640)          # face detector input resolution. Raise (e.g. 800x800) only if you observe distant/small faces failing to detect — larger sizes cost more compute for no benefit if your camera distance doesn't need it.
 NMS_IOU_THRESHOLD = 0.7        # how much two person boxes can overlap before YOLO's own duplicate-suppression treats them as "the same detection" and drops one. Standard default is 0.7. If close/overlapping people in a crowd are being merged into a single detection, try raising this (e.g. 0.8) — allows boxes to overlap more before being considered duplicates. Raising too far risks the opposite problem: one person's box getting detected twice.
+DETECTION_CONF_THRESHOLD = 0.45  # YOLO's minimum confidence to count something as a detection. Default is ~0.25 (permissive). Raising this trades some recall for higher precision — worth testing against your ground truth if false positives are the bigger concern than false negatives .
 
 # ---- Tracker tuning ----
 # Points at a custom ByteTrack config with a longer track_buffer and slightly

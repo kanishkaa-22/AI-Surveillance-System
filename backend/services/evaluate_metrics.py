@@ -1,7 +1,8 @@
 """
-Evaluation metrics
+Evaluation metrics (Week 3 item 5 / Week 4).
 
-Summarizes the numbers your report needs. Some require a small amount of manual ground-truth labeling first — this script tells you exactly what
+Summarizes the numbers your report needs. Some require a small amount of
+manual ground-truth labeling first — this script tells you exactly what
 to fill in and where.
 
 Run from repo root: python backend/services/evaluate_metrics.py
@@ -9,7 +10,9 @@ Run from repo root: python backend/services/evaluate_metrics.py
 
 import os
 import csv
+import glob
 import sqlite3
+import sys
 import pandas as pd
 
 ID_SWITCH_LOG = "data/track_outputs/id_switch_log.csv"
@@ -28,36 +31,34 @@ def summarize_reid():
     'correct' column (1/0), then re-run this to get the actual success rate.
     """
     if not os.path.exists(ID_SWITCH_LOG):
-        print("No id_switch_log.csv yet — run backend/main.py on a "
-              "leave/re-enter clip first.")
+        print("No id_switch_log.csv yet — run backend/main.py on a leave/re-enter clip first.", flush=True)
         return
 
     df = pd.read_csv(ID_SWITCH_LOG)
     if df.empty:
-        print("id_switch_log.csv is empty — no reappearance events logged yet.")
+        print("id_switch_log.csv is empty — no reappearance events logged yet.", flush=True)
         return
 
-    print(f"\n{len(df)} track-reappearance events logged.")
-    print(f"  Histogram method proposed a match in "
-          f"{df['hist_match_id'].notna().sum()} cases.")
-    print(f"  Deep method proposed a match in "
-          f"{df['deep_match_id'].notna().sum()} cases.")
+    print(f"\n{len(df)} track-reappearance events logged.", flush=True)
+    print(f"  Histogram method proposed a match in {df['hist_match_id'].notna().sum()} cases.", flush=True)
+    print(f"  Deep method proposed a match in {df['deep_match_id'].notna().sum()} cases.", flush=True)
 
     if not os.path.exists(GROUND_TRUTH_TEMPLATE):
         df_out = df.copy()
         df_out["was_it_really_the_same_person(1=yes,0=no)"] = ""
+        os.makedirs(os.path.dirname(GROUND_TRUTH_TEMPLATE), exist_ok=True)
         df_out.to_csv(GROUND_TRUTH_TEMPLATE, index=False)
-        print(f"\nTemplate written to {GROUND_TRUTH_TEMPLATE}")
+        print(f"\nTemplate written to {GROUND_TRUTH_TEMPLATE}", flush=True)
         print("  Watch your leave/re-enter clips, fill in the last column "
               "with 1 or 0 for each row, then re-run this script for the "
-              "actual ReID success rate comparison.")
+              "actual ReID success rate comparison.", flush=True)
         return
 
     labeled = pd.read_csv(GROUND_TRUTH_TEMPLATE)
     truth_col = "was_it_really_the_same_person(1=yes,0=no)"
     labeled = labeled[labeled[truth_col].isin([0, 1, "0", "1"])]
     if labeled.empty:
-        print(f"\n{GROUND_TRUTH_TEMPLATE} exists but has no filled-in rows yet.")
+        print(f"\n{GROUND_TRUTH_TEMPLATE} exists but has no filled-in rows yet.", flush=True)
         return
 
     labeled[truth_col] = labeled[truth_col].astype(int)
@@ -65,12 +66,11 @@ def summarize_reid():
     for method, match_col in [("Histogram", "hist_match_id"), ("Deep", "deep_match_id")]:
         proposed = labeled[labeled[match_col].notna()]
         if proposed.empty:
-            print(f"\n{method}: no matches proposed to evaluate.")
+            print(f"\n{method}: no matches proposed to evaluate.", flush=True)
             continue
         correct = (proposed[truth_col] == 1).sum()
         total = len(proposed)
-        print(f"\n{method} ReID success rate: {correct}/{total} "
-              f"({100*correct/total:.1f}%)")
+        print(f"\n{method} ReID success rate: {correct}/{total} ({100*correct/total:.1f}%)", flush=True)
 
 
 def summarize_recognition_accuracy():
@@ -80,7 +80,7 @@ def summarize_recognition_accuracy():
     or main.py on both enrolled-person clips and your unknown_01/unknown_02 clips.
     """
     if not os.path.exists(DB_PATH):
-        print("No database found yet.")
+        print("\nNo database found yet.", flush=True)
         return
 
     conn = sqlite3.connect(DB_PATH)
@@ -93,31 +93,29 @@ def summarize_recognition_accuracy():
     conn.close()
 
     if events.empty:
-        print("\nNo entry/exit events logged yet.")
+        print("\nNo entry/exit events logged yet.", flush=True)
         return
 
     recognized = events[events["name"].notna()]
     unknown = events[events["name"].isna()]
 
-    print(f"\nRecognition events: {len(recognized)} recognized, "
-          f"{len(unknown)} logged as Unknown.")
+    print(f"\nRecognition events: {len(recognized)} recognized, {len(unknown)} logged as Unknown.", flush=True)
     if not recognized.empty:
-        print(f"  Average confidence on recognized matches: "
-              f"{recognized['confidence'].mean():.3f}")
+        print(f"  Average confidence on recognized matches: {recognized['confidence'].mean():.3f}", flush=True)
     print("  NOTE: whether each 'recognized' row and each 'Unknown' row is "
-        "actually CORRECT still needs a manual check against who was really "
-        "in that clip — cross-reference against your unknown_01/unknown_02 "
-        "clips (should show 0 recognized rows) and your enrolled-person "
-        "clips (should show 0 Unknown rows) to get true/false positive rates.")
+          "actually CORRECT still needs a manual check against who was really "
+          "in that clip — cross-reference against your unknown_01/unknown_02 "
+          "clips (should show 0 recognized rows) and your enrolled-person "
+          "clips (should show 0 Unknown rows) to get true/false positive rates.", flush=True)
 
 
 def summarize_fps():
     if not os.path.exists(BENCHMARK_CSV):
-        print("\nNo benchmark_results.csv yet — run detection/benchmark.py first.")
+        print("\nNo benchmark_results.csv yet — run detection/benchmark.py first.", flush=True)
         return
     df = pd.read_csv(BENCHMARK_CSV)
-    print("\nEnd-to-end FPS (from Step 3 benchmark):")
-    print(df.to_string(index=False))
+    print("\nEnd-to-end FPS (from Step 3 benchmark):", flush=True)
+    print(df.to_string(index=False), flush=True)
 
 
 def summarize_detection_precision_recall():
@@ -130,7 +128,6 @@ def summarize_detection_precision_recall():
     merging needed. A predicted box counts as correct if it overlaps a
     ground-truth box by at least IOU_THRESHOLD.
     """
-    import glob
     GROUND_TRUTH_DIR = "data/ground_truth"
     IMAGES_DIR = "data/ground_truth/images"
     IOU_THRESHOLD = 0.5
@@ -139,17 +136,18 @@ def summarize_detection_precision_recall():
     if not gt_csv_paths:
         print(f"\nNo ground truth yet — run backend/utils/extract_frames_for_labeling.py "
               f"then backend/utils/label_boxes.py first. Looking for any file matching "
-              f"*ground_truth*.csv in {GROUND_TRUTH_DIR}/")
+              f"*ground_truth*.csv in {GROUND_TRUTH_DIR}/", flush=True)
         return
 
     print(f"\nFound {len(gt_csv_paths)} ground-truth file(s): "
-          f"{[os.path.basename(p) for p in gt_csv_paths]}")
+          f"{[os.path.basename(p) for p in gt_csv_paths]}", flush=True)
 
     import cv2
     from ultralytics import YOLO
-    import sys
-    sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
-    import config
+
+    # Ensure parent module imports work
+    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
+    from backend import config
 
     def iou(box_a, box_b):
         xa1, ya1, xa2, ya2 = box_a
@@ -163,6 +161,11 @@ def summarize_detection_precision_recall():
         return inter_area / union if union > 0 else 0
 
     gt_df = pd.concat([pd.read_csv(p) for p in gt_csv_paths], ignore_index=True)
+    
+    if not os.path.exists(config.MODEL_PATH):
+        print(f"\nModel file not found at {config.MODEL_PATH}", flush=True)
+        return
+
     model = YOLO(config.MODEL_PATH)
 
     total_tp, total_fp, total_fn, total_tn = 0, 0, 0, 0
@@ -179,10 +182,20 @@ def summarize_detection_precision_recall():
         ]
 
         img = cv2.imread(image_path)
-        results = model.predict(source=img, classes=[0], device=config.DEVICE, verbose=False)
+        if img is None:
+            continue
+
+        results = model.predict(
+            source=img,
+            classes=[0],
+            device=config.DEVICE,
+            conf=config.DETECTION_CONF_THRESHOLD,
+            verbose=False
+        )
         pred_boxes = [tuple(b) for b in results[0].boxes.xyxy.cpu().numpy()] if results else []
 
-        if not gt_boxes and not pred_boxes:
+        # Count frames with no ground-truth persons and no predicted persons as True Negatives
+        if len(gt_boxes) == 0 and len(pred_boxes) == 0:
             total_tn += 1
             continue
 
@@ -203,26 +216,29 @@ def summarize_detection_precision_recall():
 
         total_fn += len(gt_boxes) - len(matched_gt)
 
+    total_instances = total_tp + total_fp + total_fn + total_tn
     precision = total_tp / (total_tp + total_fp) if (total_tp + total_fp) > 0 else 0
     recall = total_tp / (total_tp + total_fn) if (total_tp + total_fn) > 0 else 0
-    denom = total_tp + total_tn + total_fp + total_fn
-    accuracy = (total_tp + total_tn) / denom if denom > 0 else 0
-    f1 = (2 * precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
+    accuracy = (total_tp + total_tn) / total_instances if total_instances > 0 else 0
 
-    print(f"\nDetection precision/recall (IOU >= {IOU_THRESHOLD}, "
-          f"{gt_df['image'].nunique()} labeled images):")
-    print(f"  True positives:  {total_tp}")
-    print(f"  False positives: {total_fp}  (model detected a person that wasn't labeled)")
-    print(f"  False negatives: {total_fn}  (a labeled person the model missed)")
-    print(f"  True negatives:  {total_tn}  (no person labeled and none detected)")
-    print(f"  Precision: {precision:.3f}   Recall: {recall:.3f}   Accuracy: {accuracy:.3f}   F1: {f1:.3f}")
+    print(f"\nDetection metrics (IOU >= {IOU_THRESHOLD}, {gt_df['image'].nunique()} labeled images):", flush=True)
+    print(f"  True positives:  {total_tp}", flush=True)
+    print(f"  False positives: {total_fp}  (model detected a person that wasn't labeled)", flush=True)
+    print(f"  False negatives: {total_fn}  (a labeled person the model missed)", flush=True)
+    print(f"  True negatives:  {total_tn}  (no person labeled and none detected)", flush=True)
+    print(f"  Precision: {precision:.3f}   Recall: {recall:.3f}   Accuracy: {accuracy:.3f}", flush=True)
 
 
 if __name__ == "__main__":
-    print("=" * 60)
-    print("EVALUATION METRICS SUMMARY")
-    print("=" * 60)
+    print("=" * 60, flush=True)
+    print("EVALUATION METRICS SUMMARY", flush=True)
+    print("=" * 60, flush=True)
+    print(f"Working Directory: {os.getcwd()}", flush=True)
+    
     summarize_fps()
     summarize_reid()
     summarize_recognition_accuracy()
     summarize_detection_precision_recall()
+    
+    print("=" * 60, flush=True)
+    print("EVALUATION COMPLETE", flush=True)
